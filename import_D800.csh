@@ -2,7 +2,7 @@
 
 #Requires dcraw and ufraw
 
-#set echo
+set echo
 
 echo
 
@@ -12,22 +12,25 @@ if ($#argv != 1) then
 endif 
 
 #set carddir = '/Volumes/SHEAN_G10/DCIM/100CANON'
-#set carddir = /Volumes/NIKON\ D800\ /DCIM/100ND800
-set carddir = /Volumes/NIKON\ D800\ /DCIM/10*ND800
-set photodir = /Volumes/ESS_STF_1TB/dshean
+#set carddir = '/Volumes/NIKON\ D800\ /DCIM/101ND800'
+set carddir = '/Volumes/NIKON D800 /DCIM/101ND800'
+#set carddir = '/Volumes/NIKON\ D800\ /DCIM/10*ND800'
+set photodir = /Volumes/ESS_STF_1TB/dshean/photo
+
+echo $carddir
 
 set jpgext = JPG
 set rawext = NEF
 
 set eventname = $1
 
-set njpg = `ls $carddir/*$jpgext | wc -l`
-set nraw = `ls $carddir/*$rawext | wc -l`
+set njpg = `ls "$carddir"/*$jpgext | wc -l`
+set nraw = `ls "$carddir"/*$rawext | wc -l`
 
 #What about turnover?  
 #Might want to use time here to find first/last image
-set firstimg = `ls $carddir/*.{$rawext,$jpgext} | head -1`
-set lastimg = `ls $carddir/*.{$rawext,$jpgext} | tail -1`
+set firstimg = `ls "$carddir"/*.{$rawext,$jpgext} | head -1`
+set lastimg = `ls "$carddir"/*.{$rawext,$jpgext} | tail -1`
 
 #Should really check to make sure times are UTC here
 #As of 6/26/12, using UTC times in camera
@@ -58,10 +61,10 @@ if (! -d $outdir) mkdir $outdir
 if (! -d $outdir/$jpgext) mkdir $outdir/$jpgext
 if (! -d $outdir/$rawext) mkdir $outdir/$rawext
 
-set filelist = (`ls $carddir/*.{$rawext,$jpgext} | sort -u`)
+set filelist = (`ls "$carddir"/*.{$rawext,$jpgext} | sort -u`)
 
-set rawfilelist =  (`ls $carddir/*.$rawext`)
-set jpgfilelist = (`ls $carddir/*.$jpgext`)
+set rawfilelist =  (`ls "$carddir"/*.$rawext`)
+set jpgfilelist = (`ls "$carddir"/*.$jpgext`)
 
 echo "Output directory: $outdir"
 echo "$#filelist total files on card"

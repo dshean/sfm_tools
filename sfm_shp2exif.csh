@@ -1,5 +1,9 @@
 #! /bin/tcsh -f
 
+#NOTE 7/27/13
+#See http://www.sno.phy.queensu.ca/~phil/exiftool/geotag.html
+#Good information about tagging photos w/ GPS tracklog
+
 #This script will assign lat/lon/elev from a shapefile to exif data of photos
 #It is assumed that the points are in the same order as the sfm site IDs, 
 
