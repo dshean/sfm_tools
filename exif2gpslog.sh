@@ -24,3 +24,20 @@ fmt_str='$FileName, $SubSecDateTimeOriginal, $GPSDateTime, $GPSLatitude#, $GPSLo
 #exiftool -progress -m -r -c '%.6f' -p "$fmt_str" $dir/*.JPG 
 echo $fmt_str > out.csv
 exiftool -progress -if '$GPSDateTime' -fileOrder GPSDateTime -m -r -ext JPG -p "$fmt_str" $dir >> out.csv 
+
+#EPSG:4326
+#$GPSLatitude# $GPSAltitude#
+#csv2vrt.py out.csv
+echo -n > out.vrt
+echo '<OGRVRTDataSource>' >> out.vrt
+echo '   <OGRVRTLayer name="out">' >> out.vrt
+echo '         <SrcDataSource>out.csv</SrcDataSource>' >> out.vrt
+echo '         <GeometryType>wkbPoint25D</GeometryType>' >> out.vrt
+echo '         <LayerSRS>EPSG:4326</LayerSRS>' >> out.vrt
+echo '         <GeometryField encoding="PointFromColumns" x="$GPSLongitude#" y="$GPSLatitude#" z="$GPSAltitude#"/>' >> out.vrt
+echo '     </OGRVRTLayer>' >> out.vrt
+echo '</OGRVRTDataSource>' >> out.vrt
+
+ogr2ogr out.shp out.vrt
+
+#ogr2ogr -f GPX -dsco GPX_USE_EXTENSIONS=YES out.gpx out.vrt
