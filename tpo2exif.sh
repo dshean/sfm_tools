@@ -7,6 +7,7 @@
 #Requires exiftool, gpsbabel, ogr/gdal
 
 #Input should be csv output from Trimble Pathfinder Office
+#Use preset csv_geoxh_ptlog
 #"Configurable ascii"
 #Positions only - One point per GPS position
 #CSV template (note: NO {GPS Time}) 
@@ -16,16 +17,20 @@
 #NOTE: Apparently, we need to use "Date recorded" and "Time recorded" output from TPO
 #This was ~7 seconds earlier than the recorded GPS Time for each point in the 20130716 Greenland hike
 #This syncs with the Nikon GP-1 GPS timestamps
+exif2shp=/Users/dshean/src/sfm/exif2gpslog.sh
 
 in_fn=$1
 photo_dir=$2
 
 #Output original photo locations as shp
+echo "Generating shp from original photo exif data"
 out=exif_coord_original
-exif2shp.sh $photo_dir $out
+echo $exif2shp $photo_dir $out
+$exif2shp $photo_dir $out
 
 #Convert to gpx
-gpx_fn=${in_fn%%.*}.gpx
+gpx_fn=${in_fn%.*}.gpx
+echo $gpx_fn
 #ogr2ogr -f GPX -dsco GPX_USE_EXTENSIONS=yes $gpx_fn $shp_fn
 
 #Convert TPO to gpx track
@@ -40,10 +45,19 @@ echo "Updating geotagging in $photo_dir"
 #Timezone offset of exif DateTimeOriginal relative to UTC
 #This is the value for Greenland 2013 images (doh!)
 #Should be 0 when camera clock is set to UTC
-tz="-02:00"
+#tz="-02:00"
+#For 20130509 flight 
+#tz="-07:00"
+#For 201207 fieldwork
+tz="-00:00"
 
 #This is the offset between the camera clock and GeoXH GPS time, should only be a few seconds
-geosync_offset=0.0
+#This time difference may be of the form "SS", "MM:SS", "HH:MM:SS" or "DD HH:MM:SS" (where SS=seconds, MM=minutes, HH=hours and DD=days), and a leading "+" or "-" may be added for positive or negative differences (negative if the camera clock was ahead of GPS time). Fractional seconds are allowed (eg. "SS.ss").
+#geosync_offset=0.0
+#20130509 Rainier flight
+#geosync_offset=+0.5
+#201207 fieldwork
+geosync_offset=+3.0
 
 #Could also use this, but not all images have valid GPS info from Nikon GP-1
 #"-Geotime<GPSDateTime"
@@ -58,5 +72,7 @@ mkdir $photo_dir/jpg_original
 mv $photo_dir/*.jpg_original $photo_dir/jpg_original
 
 #Output corrected photo locations as shp
+echo "Generating shp from updated photo exif data"
 out=exif_coord_corrected
-exif2shp.sh $photo_dir $out
+echo $exif2shp $photo_dir $out
+$exif2shp $photo_dir $out
