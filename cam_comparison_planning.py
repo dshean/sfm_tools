@@ -16,9 +16,10 @@ def calcfov(cam, f):
     #print np.degrees(fov)
     return fov
 
-def calcres(cam, alt, fov):
+def calcres(cam, alt, fov, offnadir=0):
     res = 2*alt*np.tan(fov/2)/cam['diag_px']
-    return res/np.cos(np.radians(offnadir))
+    #return res/np.cos(np.radians(offnadir))
+    return res/np.cos(offnadir)
 
 def plotgen(cam, alt_range):
     c = next(colorcycler)
@@ -29,13 +30,16 @@ def plotgen(cam, alt_range):
         alt_scale = 1.0
     for f in cam['f_list']:
         fov = calcfov(cam, f)
-        res = calcres(cam, alt_range, fov)
-        x_gd = np.array(res)*cam['x_px'] 
-        y_gd = np.array(res)*cam['y_px'] 
+        res_center = calcres(cam, alt_range, fov, offnadir=0)
+        res_corner = calcres(cam, alt_range, fov, offnadir=fov/2.)
+        x_gd = np.array(res_center)*cam['x_px'] 
+        y_gd = np.array(res_center)*cam['y_px'] 
         gd_area = x_gd * y_gd
-        ls = next(linecycler)
+        #ls = next(linecycler)
+        ls = '-'
         plt.figure(1)
-        plt.plot(alt_range/alt_scale, res*100, color=c, ls=ls, label='%s, %0.1f mm (%0.1f$^\circ$, %0.1f mm eq)' % (cam['name'],f,np.degrees(fov),f*cam['crop_factor']))
+        plt.plot(alt_range/alt_scale, res_center*100, color=c, ls=ls, label='%s, %0.1f mm (%0.1f$^\circ$, %0.1f mm eq) Center' % (cam['name'],f,np.degrees(fov),f*cam['crop_factor']))
+        plt.plot(alt_range/alt_scale, res_corner*100, color=c, ls='--', label='%s, %0.1f mm (%0.1f$^\circ$, %0.1f mm eq) Corner' % (cam['name'],f,np.degrees(fov),f*cam['crop_factor']))
         plt.figure(2)
         plt.plot(alt_range/alt_scale, x_gd, color=c, ls=ls, label='%s, %0.1f mm (%0.1f$^\circ$, %0.1f mm eq)' % (cam['name'],f,np.degrees(fov),f*cam['crop_factor']))
         plt.figure(3)
@@ -53,8 +57,9 @@ offnadir = 0
 alt_units = 'm'
 alt_list = np.arange(0, 122, 4)
 
-d800 = {'name':'D800', 'x_mm':35.9, 'y_mm':24.0, 'x_px':7360, 'y_px':4912, 'f_list': (28.0, 50.0) }
-NEX5 = {'name':'NEX-5', 'x_mm':23.4, 'y_mm':15.6, 'x_px':4912, 'y_px':3264, 'f_list': (16.0, 20.0) }
+d800 = {'name':'D800', 'x_mm':35.9, 'y_mm':24.0, 'x_px':7360, 'y_px':4912, 'f_list': (50.0,) }
+#NEX5 = {'name':'NEX-5', 'x_mm':23.4, 'y_mm':15.6, 'x_px':4912, 'y_px':3264, 'f_list': (16.0, 20.0) }
+NEX5 = {'name':'NEX-5', 'x_mm':23.4, 'y_mm':15.6, 'x_px':4912, 'y_px':3264, 'f_list': (20.0,) }
 a5000 = {'name':'a5000', 'x_mm':23.4, 'y_mm':15.6, 'x_px':5456, 'y_px':3632, 'f_list': (16.0, 20.0) }
 #rx100 = {'name':'rx100_III', 'x_mm':13.2, 'y_mm':8.8, 'x_px':5472, 'y_px':3648, 'f_list': (8.8, 25.7) }
 rx100 = {'name':'RX100_III', 'x_mm':13.2, 'y_mm':8.8, 'x_px':5472, 'y_px':3648, 'f_list': (8.8,) }
@@ -63,7 +68,8 @@ s100 = {'name':'s100', 'x_mm':7.6, 'y_mm':5.7, 'x_px':4000, 'y_px':3000, 'f_list
 gopro12 = {'name':'gopro_12MP', 'x_mm':6.17, 'y_mm':4.55, 'x_px':4000, 'y_px':3000, 'f_list': (2.77,) }
 gopro7 = {'name':'gopro_7MP', 'x_mm':4.6275, 'y_mm':3.4125, 'x_px':3000, 'y_px':2250, 'f_list': (2.77,) }
 
-cams = [d800, NEX5, a5000, gx1, rx100, s100, gopro12, gopro7]
+#cams = [d800, NEX5, a5000, gx1, rx100, s100, gopro12, gopro7]
+cams = [d800, NEX5, s100, gopro12, gopro7]
 cams = cams[::-1]
 
 lines = ["-","--","-.",":"]
