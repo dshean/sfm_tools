@@ -284,7 +284,7 @@ def _main():
     csv_null = ""
     csv_delim = ","
     #time_msg = "TIME"
-    time_msg = None 
+    time_msg = None
     file_name = None
     opt = None
     for arg in sys.argv[2:]:
