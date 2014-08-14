@@ -4,13 +4,15 @@
 #dshean@gmail.com
 #8/9/14
 
-#This takes a PX4 GPS/ATT log and spits out a csv w/ UTC,lat,lon,z for geotagging
+#This takes a PX4 dataflash log and spits out a csv w/ UTC,lat,lon,z ready for geotagging
 
 import sys
 import os
 from datetime import datetime
 
 import numpy as np
+
+#This library is temporarily part of demtools
 import gpstime
 
 #GPS_Status,GPS_TimeMS,GPS_Week,GPS_NSats,GPS_HDop,GPS_Lat,GPS_Lng,GPS_RelAlt,GPS_Alt,GPS_Spd,GPS_GCrs,GPS_VZ,GPS_T,ATT_TimeMS,ATT_DesRoll,ATT_Roll,ATT_DesPitch,ATT_Pitch,ATT_DesYaw,ATT_Yaw
@@ -43,18 +45,3 @@ y = np.array([utc_dt, x[lat], x[lon], x[alt]])
 hdr = 'DateTime,Lat,Lon,Elev'
 #np.savetxt(out_fn, y.T, delimiter=',', fmt='%s,%0.8f,%0.8f,%0.2f', header=hdr, comments='')
 np.savetxt(out_fn, y.T, delimiter=',', fmt='%s', header=hdr, comments='')
-
-#For tlog
-#2014-08-08T20:46:55.860,FE,1E,A4, 1, 1,18,mavlink_gps_raw_int_t,time_usec,114150000,lat,487368470,lon,-1218404915,alt,1753700,eph,439,epv,65535,vel,2,cog,0,fix_type,3,satellites_visible,6,,Len,38
-#fn=2014-08-08_13-46-36.csv
-#outfn=${fn%.*}_utc.csv
-#gpxfn=${fn%.*}_utc.gpx
-#echo 'DateTime,Lat,Lon,Elev' > $outfn
-#cat $fn | grep mavlink_gps_raw_int_t | awk 'BEGIN {FS=","; OFS=","} {printf "%s,%0.7f,%0.7f,%0.2f\n",$1, $12/1E7, $14/1E7, $16/1E3}' | grep -v '0.0000000,0.0000000,0.00' >> $outfn
-#gpsbabel -t -i unicsv,utc=0 -f $outfn -x track,merge,discard -o GPX -F $gpxfn
-
-#Note: want to set exiftool to limit GeoMaxExtSecs in ~/.ExifTool_config
-#This prevents photos taken before/after the GPS tracklog from being assigned positions
-#exiftool -progress -Geotag ~/Documents/UW/MtBaker/20140808_uav/PX4/merge.gpx -Geosync=-1.0 "-Geotime<\${DateTimeOrigial}-00:00" export_highcontrast
-
-
