@@ -104,20 +104,26 @@ do
 done
 
 #Merge all gpx log files
+ltype=GPS_utc
 if $merge ; then
-    echo "Merging all gpx files"
+    echo "Merging files"
     echo
-    merge_fn=merge.gpx
     cd $out_logdir
+    merge_fn=merge_${ltype}
+
+    csv_list=($(ls *${ltype}.csv))
+    #concatenate, sort by time, then remove extraneous headers
+    cat ${csv_list[@]} | sort -n | sed "1,$((${#csv_list[@]} - 1))d" > ${merge_fn}.csv
+
     #Should be more careful with this
-    gpx_list=($(ls *GPS_utc.gpx))
+    gpx_list=($(ls *${ltype}.gpx))
     str=''
     for i in ${gpx_list[@]}
     do
        str+="-f $i " 
     done
     #merge sort by time, discard missing timestamps
-    gpsbabel -t -i gpx $str -x track,merge,discard -o gpx -F $merge_fn 
+    gpsbabel -t -i gpx $str -x track,merge,discard -o gpx -F ${merge_fn}.gpx
 fi
 
 exit
