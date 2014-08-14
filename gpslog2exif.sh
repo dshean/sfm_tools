@@ -4,13 +4,13 @@
 #dshean@gmail.com
 #11/4/13
 
-#Use csv GPS log from Trimble Pathfinder Office to geotag a directory full of photos
+#Use csv or gpx GPS log from to geotag a directory full of photos
 #Requires exiftool, gpsbabel, ogr/gdal
 #Must set offsets manually
 
-#Need to figure out a way to prevent the GPSMapDatum from being updated when geotagging with TPO GPS log doesn't occur (no overlap)
+#Need to prevent GPSMapDatum from being updated when geotagging with TPO GPS log doesn't occur (no overlap)
 
-#Input should be csv output from Trimble Pathfinder Office
+#Tested with input csv from Trimble Pathfinder Office
 #Use preset csv_geoxh_ptlog
 #"Configurable ascii"
 #Positions only - One point per GPS position
