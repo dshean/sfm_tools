@@ -10,6 +10,7 @@
 #!!!
 #NOTE: Nikon GP-1 GPS altitude is MSL, not WGS84 ellipsoid
 #Need to write HAE altitude back to original images
+#run exif_gpsalt_msl2hae.sh dir first
 #!!!
 
 #Nikon GP-1 accuracy is 10 m RMS (as stated in manual), assumed to be horizontal
@@ -17,10 +18,24 @@
 
 #See http://www.sno.phy.queensu.ca/~phil/exiftool/geotag.html
 
-#ext=NEF
-ext=JPG
+echo
+if [ $# -ne 2 ] ; then
+    echo "Usage is $0 photodir outname"
+    echo
+    exit 1
+fi
+
 dir=$1
-out=$2
+out=${2%.*}
+
+#Correct GPSAltitude from MSL to HAE
+msl2hae=true
+if $msl2hae ; then
+    echo "Correcting GPSAltitude from MSL to HAE"
+    #Note: this script contains a check to see if tags have already been corrected
+    exif_gpsalt_msl2hae.sh $dir
+    echo
+fi
 
 #fmt=/Users/dshean/src/sfm/gpx.fmt
 #fmt=/Users/dshean/src/sfm/kml.fmt
@@ -34,25 +49,17 @@ out=$2
 #-if conditionally processes input
 
 #Define exiftool tags to be extracted
-#fmt_str='$FileName, $SubSecDateTimeOriginal, $GPSDateTime, $GPSLatitude#, $GPSLongitude#, $GPSAltitude#, $LensID, $FocalLength#, $ShutterSpeed, $Aperture, $ISO, $FOV, $FocusDistance, $DOF'
-fmt_str='$FileName,$SubSecDateTimeOriginal,$DateTimeOriginal,$GPSDateTime,$GPSLatitude#,$GPSLongitude#,$GPSAltitude#,$LensID,$FocalLength#,$ShutterSpeed,$Aperture,$ISO,$FOV'
+#For some reason, the GPSAltitude tag is integer in output
+fmt_str='$FileName,$DateTimeOriginal,$SubSecDateTimeOriginal,$GPSDateTime,$GPSLatitude#,$GPSLongitude#,$GPSAltitude#,$GPSMapDatum,$LensID,$FocalLength#,$ShutterSpeed,$Aperture,$ISO,$FOV'
 
 #Extract EXIF data to csv file
 #exiftool -progress -m -r -c '%.6f' -p "$fmt_str" $dir/*.JPG 
+echo "Extracting GPS info for shp"
 echo $fmt_str | sed -e 's/\$//g' -e 's/\#//g' > $out.csv
-exiftool -progress -if '$GPSDateTime' -fileOrder GPSDateTime -m -r -ext $ext -p "$fmt_str" $dir >> $out.csv 
-
-#Convert the default MSL altitude (assume EGM96) to HAE altitude (WGS84)
-#Set this if camera is Nikon D800 or S100 (probably all cameras with GPS)
-msl2hae=true
-
-if $msl2hae ; then
-    #ogr2ogr -s_srs '+proj=longlat +datum=WGS84 +no_defs +geoidgrids=egm96_15.gtx' -t_srs wgs84 ${out%.*}_wgs84.shp $out.shp
-    exif_gpsalt_msl2hae.py $out.csv
-    mv $out.csv ${out%.*}_msl.csv
-    mv ${out%.*}_hae.csv $out.csv
-    #Now write back to original input images EXIF
-fi
+#Limit to specific extension (useful when raw and jpg in same directory)
+#exiftool -progress -if '$GPSDateTime' -fileOrder GPSDateTime -m -r -ext $ext -p "$fmt_str" $dir >> $out.csv 
+echo exiftool -progress -if '$GPSDateTime' -fileOrder DateTimeOriginal -m -p "$fmt_str" $dir 
+exiftool -progress -if '$GPSDateTime' -fileOrder DateTimeOriginal -m -p "$fmt_str" $dir >> $out.csv 
 
 #Write out vrt for csv
 echo -n > $out.vrt
@@ -61,12 +68,14 @@ echo "      <OGRVRTLayer name=\"$out\">" >> $out.vrt
 echo "         <SrcDataSource>$out.csv</SrcDataSource>" >> $out.vrt
 echo '         <GeometryType>wkbPoint25D</GeometryType>' >> $out.vrt
 echo '         <LayerSRS>EPSG:4326</LayerSRS>' >> $out.vrt
-#echo '         <GeometryField encoding="PointFromColumns" x="$GPSLongitude#" y="$GPSLatitude#" z="$GPSAltitude#"/>' >> $out.vrt
 echo '         <GeometryField encoding="PointFromColumns" x="GPSLongitude" y="GPSLatitude" z="GPSAltitude"/>' >> $out.vrt
 echo '      </OGRVRTLayer>' >> $out.vrt
 echo '</OGRVRTDataSource>' >> $out.vrt
 
 #Convert to ESRI Shapefile
+echo
+echo "Creating shp from vrt"
+echo ogr2ogr -overwrite $out.shp $out.vrt
 ogr2ogr -overwrite $out.shp $out.vrt
 
 #ogr2ogr -f GPX -dsco GPX_USE_EXTENSIONS=YES out.gpx out.vrt
