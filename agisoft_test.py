@@ -13,10 +13,15 @@
 import os
 import PhotoScan
 
+#Need to set the following appropriately
+
 #Path to photos
 photo_fn_path = "/tmp/export"
-#Path to ground control file, can contain IMU
+photo_fn_ext = "*.jpg"
+#Path to ground control file, can contain orientation 
 gc_fn = "/tmp/gcp.txt"
+#Path to calibration file
+cal_fn = "/tmp/D800_cal.xml"
 #This is the base fn for output files
 #out_fn = "/tmp/test"
 out_fn = os.path.join(photo_fn_path, "test") 
@@ -28,14 +33,21 @@ in_crs.init("EPSG::4326")
 out_crs = PhotoScan.CoordinateSystem()
 out_crs.init("EPSG::32610")
 
+#Add timestamp
+print("Started")
+
 #Create project file
 doc = PhotoScan.app.document
+
+#***
+#NOTE: the following (loading photos, ground control, calibration, etc.) can be done manually
+#***
 
 #Load photos
 new_chunk = PhotoScan.Chunk() 
 new_chunk.label = "chunk1"
 
-photo_fn_list = glob.glob(os.path.join(photo_fn_path, "*.jpg"))
+photo_fn_list = glob.glob(os.path.join(photo_fn_path, photo_fn_ext))
 for photo_fn in photo_fn_list:
     new_chunk.cameras.add(photo_fn)
 
@@ -46,7 +58,7 @@ gc.projection = in_crs
 gc.loadExif()
 #Alternatively, load csv containing file names and coordinates for photos
 #gc.load(gc_fn, "csv")
-#Set accuracy of cameras
+#Set accuracy of camera positions in meters
 #GeoXH
 #gc.accuracy_cameras = 0.5
 #Nikon GP-1
@@ -54,7 +66,6 @@ gc.accuracy_cameras = 5.0
 gc.apply()
 
 #Import calibration 
-#cal_fn = "D800.xml"
 #cal = PhotoScan.Calibration(cal_fn)
 #new_chunk.calibration_mode('fixed')
 
@@ -65,27 +76,35 @@ doc.chunks.add(new_chunk)
 PhotoScan.app.update()
 doc.save(os.path.join(out_fn, "_init.psz")￼
 
-#NOTE: can do the above manually, then just pick up here
+#***
+#NOTE: end of section with steps that can be accomplished manually
+#***
 
 #Grab the active chunk
 chunk = doc.activeChunk
 
 #Align photos
+print("Aligning photos")
 chunk.matchPhotos(accuracy="high", preselection="disabled")
 #Use ground control if appropriate for input photos
 #chunk.matchPhotos(accuracy="high", preselection="ground control")
 chunk.alignPhotos()
+PhotoScan.app.update()
 doc.save(os.path.join(out_fn, "_sparse.psz")￼
 
 #NOTE: markers should be manually identified here
 
 #Build Dense Cloud
+print("Building dense cloud")
 chunk.buildDenseCloud(quality="medium", filter="mild")
+PhotoScan.app.update()
 doc.save(os.path.join(out_fn, "_dense.psz")￼
 
 #Build Mesh
 #NOTE: want to do this both with and without interpolation, export DEM for both
+print("Building mesh")
 chunk.buildModel(object="arbitrary", source="dense", interpolation="disabled", faces="high")
+PhotoScan.app.update()
 doc.save(os.path.join(out_fn, "_mesh_nointerp.psz")￼
 
 #Want to test this smoothing - could help with TIN mesh artifacts
@@ -96,14 +115,17 @@ doc.save(os.path.join(out_fn, "_mesh_nointerp.psz")￼
 
 #Export DEM
 #Should automatically compute appropraite resolution/extent
+print("Exporting DEM")
 dem_fn = os.path.join(out_fn, "_dem.tif")
 chunk.exportDem(dem_fn, format="tif", projeciton=out_crs)
 
 #Export ortho
+print("Exporting orthomosaic")
 ortho_fn = os.path.join(out_fn, "_ortho.tif")
 chunk.exportOrthophoto(ortho_fn, format="tif", blending="average", project=out_crs)
 
 #Export point cloud
+print("Exporting point cloud")
 #Export las or xyz format
 pc_type = "las"
 #pc_type = "xyz"
@@ -114,4 +136,7 @@ chunk.exportPoints(pc_fn, dense=True, precision=7, format=pc_type, projeciton=in
 #For coord in meters, default precision of 6 is overkill
 pc_fn = os.path.join(out_fn, "_dense_proj.", pc_type)
 chunk.exportPoints(pc_fn, dense=True, precision=3, format=pc_type, projeciton=out_crs)
+
+#Add timestamp
+print("Finshed")
 
