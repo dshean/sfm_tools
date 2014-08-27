@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+
 #David Shean
 #dshean@gmail.com
 #8/22/14
@@ -11,12 +13,15 @@
 #http://www.agisoft.ru/forum/index.php?topic=1881.0
 
 import os
+import glob
 import PhotoScan
+import sys
 
 #Need to set the following appropriately
 
 #Path to photos
-photo_fn_path = "/tmp/export"
+#photo_fn_path = "/tmp/export"
+photo_fn_path = "/Volumes/SHEAN_PHOTO/photo/20140825_MammothTerraces_SfM/export_orig"
 photo_fn_ext = "*.jpg"
 #Path to ground control file, can contain orientation 
 gc_fn = "/tmp/gcp.txt"
@@ -31,7 +36,9 @@ in_crs = PhotoScan.CoordinateSystem()
 in_crs.init("EPSG::4326")
 #Define output coordinate system as UTM 10N, WGS84
 out_crs = PhotoScan.CoordinateSystem()
-out_crs.init("EPSG::32610")
+#out_crs.init("EPSG::32610")
+#This is Yellowstone
+out_crs.init("EPSG::32612")
 
 #Add timestamp
 print("Started")
@@ -52,7 +59,7 @@ for photo_fn in photo_fn_list:
     new_chunk.cameras.add(photo_fn)
 
 #Import ground control
-gc = chunk.ground_control
+gc = new_chunk.ground_control
 gc.projection = in_crs
 #Load EXIF data from photos
 gc.loadExif()
@@ -60,9 +67,9 @@ gc.loadExif()
 #gc.load(gc_fn, "csv")
 #Set accuracy of camera positions in meters
 #GeoXH
-#gc.accuracy_cameras = 0.5
+gc.accuracy_cameras = 0.5
 #Nikon GP-1
-gc.accuracy_cameras = 5.0 
+#gc.accuracy_cameras = 5.0 
 gc.apply()
 
 #Import calibration 
@@ -74,7 +81,7 @@ doc.chunks.add(new_chunk)
 
 #Update the GUI
 PhotoScan.app.update()
-doc.save(os.path.join(out_fn, "_init.psz")￼
+doc.save(out_fn + "_init.psz")
 
 #***
 #NOTE: end of section with steps that can be accomplished manually
@@ -90,7 +97,7 @@ chunk.matchPhotos(accuracy="high", preselection="disabled")
 #chunk.matchPhotos(accuracy="high", preselection="ground control")
 chunk.alignPhotos()
 PhotoScan.app.update()
-doc.save(os.path.join(out_fn, "_sparse.psz")￼
+doc.save(out_fn + "_sparse.psz")
 
 #NOTE: markers should be manually identified here
 
@@ -98,14 +105,14 @@ doc.save(os.path.join(out_fn, "_sparse.psz")￼
 print("Building dense cloud")
 chunk.buildDenseCloud(quality="medium", filter="mild")
 PhotoScan.app.update()
-doc.save(os.path.join(out_fn, "_dense.psz")￼
+doc.save(out_fn + "_dense.psz")
 
 #Build Mesh
 #NOTE: want to do this both with and without interpolation, export DEM for both
 print("Building mesh")
 chunk.buildModel(object="arbitrary", source="dense", interpolation="disabled", faces="high")
 PhotoScan.app.update()
-doc.save(os.path.join(out_fn, "_mesh_nointerp.psz")￼
+doc.save(out_fn + "_mesh_nointerp.psz")
 
 #Want to test this smoothing - could help with TIN mesh artifacts
 #chunk.smoothModel()
