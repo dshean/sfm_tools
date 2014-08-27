@@ -48,6 +48,8 @@ tz="-00:00"
 #From exiftool doc:
 #This time difference may be of the form "SS", "MM:SS", "HH:MM:SS" or "DD HH:MM:SS" (where SS=seconds, MM=minutes, HH=hours and DD=days), and a leading "+" or "-" may be added for positive or negative differences (negative if the camera clock was ahead of GPS time). Fractional seconds are allowed (eg. "SS.ss").
 geosync_offset=0.0
+#Mammoth survey
+#geosync_offset=-0.5
 #20130509 Rainier flight
 #geosync_offset=+0.5
 #201207 fieldwork
