@@ -9,10 +9,11 @@ A collection of tools to geotag and process photos for Structure from Motion (Sf
 * Agisoft script is a sample of the complete Agisoft workflow using Agisoft Python API
 
 Dependencies:
-- Several scripts rely on the excellent exiftool (http://www.sno.phy.queensu.ca/~phil/exiftool/) by Phil Harvey
-- csv to gpx conversion currently uses gpsbabel (http://www.gpsbabel.org/)
-- Some shell scripts require GDAL/OGR command line tools (http://www.gdal.org/)
-- Some python tools require numpy, matplotlib and other python libraries in dshean/demtools
+* Several scripts rely on Phil Harvey's excellent exiftool (http://www.sno.phy.queensu.ca/~phil/exiftool/)
+* csv to gpx conversion currently uses gpsbabel (http://www.gpsbabel.org/)
+* Some shell scripts require GDAL/OGR command line tools (http://www.gdal.org/)
+* Some python tools require numpy, matplotlib and other python libraries in dshean/demtools
 
 David Shean
+
 dshean@gmail.com
