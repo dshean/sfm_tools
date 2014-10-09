@@ -8,6 +8,11 @@
 #Requires exiftool, gpsbabel, ogr/gdal
 #Must set offsets manually
 
+#Note: want to set exiftool to limit GeoMaxExtSecs in ~/.ExifTool_config
+#This prevents extrapolation across gaps in GPS log
+
+#Need to implement HDOP filter
+
 #Need to prevent GPSMapDatum from being updated when geotagging with TPO GPS log doesn't occur (no overlap)
 
 #Tested with input csv from Trimble Pathfinder Office
@@ -34,7 +39,7 @@ in_fn=$1
 photo_dir=$2
 
 #Copy the TPO csv to photo directory as a record
-rsync -av $in_fn $photo_dir
+rsync -av --progress $in_fn $photo_dir
 
 #Timezone offset of exif DateTimeOriginal relative to UTC
 #Should be 0 when camera clock is properly set to UTC (with daylight savings off)
@@ -43,11 +48,17 @@ tz="-00:00"
 #tz="-02:00"
 #For 20130509 flight 
 #tz="-07:00"
+#For 20130910 flight 
+#tz="-07:00"
 
 #This is the offset between the camera clock and GeoXH GPS time, should only be a few seconds
 #From exiftool doc:
 #This time difference may be of the form "SS", "MM:SS", "HH:MM:SS" or "DD HH:MM:SS" (where SS=seconds, MM=minutes, HH=hours and DD=days), and a leading "+" or "-" may be added for positive or negative differences (negative if the camera clock was ahead of GPS time). Fractional seconds are allowed (eg. "SS.ss").
-geosync_offset=0.0
+#geosync_offset=0.0
+#20130910_Cascades
+#geosync_offset=3.0
+#20140914_Cascades
+#geosync_offset=0.25
 #Mammoth survey
 #geosync_offset=-0.5
 #20130509 Rainier flight
@@ -56,6 +67,8 @@ geosync_offset=0.0
 #geosync_offset=+3.0
 #20140808 baker NEX-5 UAV flights
 #geosync_offset=-1.0
+#20141005 baker NEX-5 UAV flights
+geosync_offset=67.8
 
 #Use SubSec times if they are available
 firstphoto=$(ls $photo_dir | head -1)
