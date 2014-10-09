@@ -99,13 +99,19 @@ chunk.alignPhotos()
 PhotoScan.app.update()
 doc.save(out_fn + "_sparse.psz")
 
+#NOTE: Adjust bounding box here
 #NOTE: markers should be manually identified here
 
 #Build Dense Cloud
 print("Building dense cloud")
-chunk.buildDenseCloud(quality="medium", filter="mild")
+ncpu = 24
+#Not sure about gpu_mask value here, if both cards will be enabled
+#Says value 5 enables device number 0 and 2
+chunk.buildDenseCloud(quality="medium", filter="mild", gpu_mask=3, cpu_cores_inactive=ncpu)
 PhotoScan.app.update()
 doc.save(out_fn + "_dense.psz")
+
+#NOTE: Edit dense cloud
 
 #Build Mesh
 #NOTE: want to do this both with and without interpolation, export DEM for both
