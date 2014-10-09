@@ -33,7 +33,7 @@ msl2hae=true
 if $msl2hae ; then
     echo "Correcting GPSAltitude from MSL to HAE"
     #Note: this script contains a check to see if tags have already been corrected
-    exif_gpsalt_msl2hae.sh $dir
+    exif_msl2hae.sh $dir
     echo
 fi
 
@@ -76,6 +76,6 @@ echo '</OGRVRTDataSource>' >> $out.vrt
 echo
 echo "Creating shp from vrt"
 echo ogr2ogr -overwrite $out.shp $out.vrt
-ogr2ogr -overwrite $out.shp $out.vrt
+ogr2ogr -overwrite -nln $out $out.shp $out.vrt
 
 #ogr2ogr -f GPX -dsco GPX_USE_EXTENSIONS=YES out.gpx out.vrt
