@@ -37,7 +37,7 @@ if [ "$(cat $out | wc -l)" -gt "1" ] ; then
     mv temp.csv $out
     echo
     echo "Generated new csv with HAE GPSAltitude tags"
-    exif_gpsalt_msl2hae_csv.py $out
+    gps_msl2hae_csv.py $out
     out_hae=${out%.*}_hae.csv
     #Isolate only tags to be updated (offers speedup?)
     cat $out_hae | awk 'BEGIN {FS=","; OFS=","} {print $1,$4,$5}' > temp.csv
