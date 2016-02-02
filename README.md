@@ -1,4 +1,4 @@
-sfm
+sfm_tools
 ===
 A collection of tools to geotag and process photos for Structure from Motion (SfM)
 
