@@ -1,6 +1,6 @@
 sfm_tools
 ===
-A collection of tools to geotag and process photos for Structure from Motion (SfM)
+A collection of (personal) tools to geotag and process photos for Structure from Motion (SfM)
 
 * Tools to read GPS log and write to photo EXIF data
 * Tools to read photo EXIF data and generate GPS log
@@ -14,6 +14,5 @@ Dependencies:
 * Some shell scripts require GDAL/OGR command line tools (http://www.gdal.org/)
 * Some python tools require numpy, matplotlib and other python libraries in dshean/demtools
 
-David Shean
-
-dshean@gmail.com
+Disclaimer:
+Most of these were written for one-time projects with my UAV/camera hardware, and many include hardcoded paths.  There are likely cleaner, more elegant ways to do most of this by now.  
