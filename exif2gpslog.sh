@@ -29,7 +29,7 @@ dir=$1
 out=${2%.*}
 
 #Correct GPSAltitude from MSL to HAE
-msl2hae=true
+msl2hae=false
 if $msl2hae ; then
     echo "Correcting GPSAltitude from MSL to HAE"
     #Note: this script contains a check to see if tags have already been corrected
