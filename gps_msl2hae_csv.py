@@ -2,7 +2,6 @@
 
 #David Shean
 #dshean@gmail.com
-#8/13/14
 
 #This tool reads a csv dump from exiftool and replaces the default MSL GPSAltitude with HAE using PROJ4 
 #Requires functions present in demtools/geolib
@@ -14,10 +13,11 @@
 
 import sys
 import os
+
 import numpy as np
 
-import geolib
-import genlib
+from pygeotools.lib import geolib
+from pygeotools.lib import iolib
 
 #Load csv
 fn = sys.argv[1]
@@ -103,4 +103,4 @@ if datumf in ra.dtype.names:
     #Append datum field
 
 #This is the only real option to save the recarray to csv
-genlib.write_recarray(outfn, ra)
+iolib.write_recarray(outfn, ra)
