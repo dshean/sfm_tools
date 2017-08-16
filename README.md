@@ -6,7 +6,7 @@ A collection of tools to geotag and process photos for Structure from Motion (Sf
 * `agisoft_all.py` - automated Agisoft PhotoScanPro workflow using Agisoft Python API (written for older version, not tested with recent releases)
 * `exif2gpslog.sh` - read EXIF data for a directory of photos and generate GPS log (csv, shp, or gpx)
 * `exif_msl2hae.sh` and `gps_msl2hae_csv.py` - convert between default EXIF height above geoid (MSL, mean sea level) to height above ellipsoid (WGS84)
-* `gpslog2exif.sh' - update EXIF positions based one external GPS log (e.g., log from Pixhawk4/Flytrex)
+* `gpslog2exif.sh` - update EXIF positions based one external GPS log (e.g., log from Pixhawk4/Flytrex)
 * Tools to pull GPS positions from Pixhawk4/Flytrex/Solo data logs, convert GPS week/seconds to UTC, etc.
 
 ## Dependencies:
