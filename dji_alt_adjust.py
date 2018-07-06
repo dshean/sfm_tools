@@ -66,25 +66,33 @@ def update_gps_altitude(fn_list, home_alt_msl):
             et.execute(*etArg_b)
 
 #Input directory containing images
-image_dir = '.'
+#image_dir = '.'
+image_dir = sys.argv[1]
 
 #Altitude of home point, meters above WGS84 ellipsoid 
 #This comes from GCP near home point
-#Should extract automatically, see commented code below
-home_alt_ell = -14.2
+#Can also extract automatically from 3rd party service for lat/lon, see commented code below
+#IMA fields
+#home_alt_ell = -14.2
+#Beach at sea level
+#home_alt_ell = -22.7 
+#Nooksack River Site
+#home_alt_ell = 72 
+home_alt_ell = 1642
 
 #Maintain consistence - absolute altitude relative to MSL
 #Approx geoid offset in Seattle (note geoid is above ellipsoid)
-geoid_height = -22.4
+#geoid_height = 22.7
+geoid_height = 0
 #Altitude of home point, meters above EGM96 geoid (mean sea level)
-home_alt_msl = home_alt_ell - geoid_height
+home_alt_msl = home_alt_ell + geoid_height
 
 image_dir_mod = os.path.join(image_dir, 'modified')
 if not os.path.exists(image_dir_mod):
     os.makedirs(image_dir_mod)
 
 #Process both RAW and JPG
-ext_list = ["DNG", "JPG"]
+ext_list = ["DNG", "JPG", "jpg"]
 for ext in ext_list:
     fn_list_orig = glob.glob(os.path.join(image_dir, '*.%s' % ext))
     if fn_list_orig:
