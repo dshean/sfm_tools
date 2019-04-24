@@ -50,8 +50,8 @@ def main():
     print('Processing %i input points' % survey_pts.shape[0])
     for index, pt in survey_pts.iterrows():
         #Extract start/stop times for the point
-        start = pt['collection start']
-        end = pt['collection end']
+        start = pt['collection start'].replace(tzinfo=None)
+        end = pt['collection end'].replace(tzinfo=None)
         #Determine indices in ppk pos file for corresponding datetime
         ppk_pos_idx = (ppk_pos['Date_UTC'] >= start) & (ppk_pos['Date_UTC'] < end)
         #Pull out corresponding ppk positions
