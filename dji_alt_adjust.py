@@ -21,6 +21,11 @@ Modified from code here: http://forum.dev.dji.com/thread-31960-1-1.html
 
 Requires PyExifTool
 pip install ocrd-pyexiftool
+
+Should migrate to exifread instead of exiftool
+
+#Code to automatically extract MSL elevation for a given lat/lon
+#Original code here: https://mavicpilots.com/threads/altitude-information-from-exif-data-photos.32535/
 """
 
 import os
@@ -28,71 +33,111 @@ import sys
 import glob
 import shutil
 
+import urllib.request
+
 import exiftool
 
-def display_image_altitude(fn_list):
-    with exiftool.ExifTool() as et:
-        for fn in fn_list:
-            tags = ['EXIF:GPSAltitude', 'EXIF:GPSAltitudeRef', 'XMP:AbsoluteAltitude', 'XMP:RelativeAltitude']
-            metadata = et.get_tags(tags, fn)
-            gpsAlt = float(metadata['EXIF:GPSAltitude'])
-            gpsAltRef = int(metadata['EXIF:GPSAltitudeRef'])
-            absAlt = float(metadata['XMP:AbsoluteAltitude'])
-            relAlt = float(metadata['XMP:RelativeAltitude'])
-            print('{}   {:0.1f}   {:d}   {:0.1f}   {:0.1f}'.format(os.path.basename(fn), gpsAlt, gpsAltRef, absAlt, relAlt))
+#Start subprocess with exiftool
+et = exiftool.ExifTool() 
+et.start()
 
-def update_gps_altitude(fn_list, home_alt_msl):
-    with exiftool.ExifTool() as et:
-        for fn in fn_list:
-            tags = ['XMP:RelativeAltitude']
-            metadata = et.get_tags(tags, fn)
+#Returns dictionary with relevant EXIF tags 
+def get_metadata(fn, et=et):
+    tags = ['EXIF:GPSLatitude', 'EXIF:GPSLongitude', 'EXIF:GPSLatitudeRef', 'EXIF:GPSLongitudeRef', \
+            'EXIF:GPSAltitude', 'EXIF:GPSAltitudeRef', 'XMP:AbsoluteAltitude', 'XMP:RelativeAltitude']
+    metadata = et.get_tags(tags, fn)
+    #Convert to positive east longitude
+    if metadata['EXIF:GPSLongitudeRef'] == "W":
+        metadata['EXIF:GPSLongitude'] *= -1
+    if metadata['EXIF:GPSLatitudeRef'] == "S":
+        metadata['EXIF:GPSLatitude'] *= -1
+    print(metadata)
+    return metadata
 
-            relAlt = float(metadata['XMP:RelativeAltitude'])
-            adjAlt = home_alt_msl + relAlt
-            etArg = ["-GPSAltitude=" + str(adjAlt),]
-            #Set altitude reference
-            #1 is 'Below Sea Level'; 0 is 'Above Sea Level'
-            if adjAlt >= 0.0:
-                etArg.append("-GPSAltitudeRef=0")
-            else:
-                etArg.append("-GPSAltitudeRef=1")
-            #Since we're modifying our own copy of originl, we don't need the default exiftool _original copy
-            etArg.append("-overwrite_original")
-            print(etArg)
-            #pyexiftool execution requires binary string
-            etArg_b = [str.encode(a) for a in etArg]
-            f_b = str.encode(fn)
-            etArg_b.append(f_b)
-            et.execute(*etArg_b)
+#Get approximate elevation MSL from 10-m NED
+def USGS10mElev(lon, lat):
+    url = 'https://nationalmap.gov/epqs/pqs.php?x=%.8f&y=%.8f&units=Meters&output=xml' % (lon, lat)
+    r = urllib.request.urlopen(url)
+    out = None
+    if r.status == 200:
+        xml = r.read()
+        print(xml)
+        out = float(xml[xml.find(b'<Elevation>')+11:xml.find(b'</Elevation>')-1])
+    print("USGS elevation MSL: %0.2f" % out)
+    return out
+
+#Global solution, not tested
+#r = json.loads(urllib.urlopen("https://api.open-elevation.com/api/v1/lookup?locations=%f,%f" % (lat,lon)).read())
+#out = float(r["results"][0]["elevation"])
+
+def update_gps_altitude(fn, home_alt_msl=None):
+    #tags = ['XMP:RelativeAltitude']
+    #metadata = et.get_tags(tags, fn)
+    metadata = get_metadata(fn)
+
+    relAlt = float(metadata['XMP:RelativeAltitude'])
+
+    #Only need to do this once 
+    if home_alt_msl is None:
+        home_alt_msl = USGS10mElev(metadata['EXIF:GPSLongitude'], metadata['EXIF:GPSLatitude'])
+        
+    adjAlt = home_alt_msl + relAlt
+    etArg = ["-GPSAltitude=" + str(adjAlt),]
+    etArg.append("-AbsoluteAltitude=" + str(adjAlt))
+    #Set altitude reference
+    #1 is 'Below Sea Level'; 0 is 'Above Sea Level'
+    if adjAlt >= 0.0:
+        etArg.append("-GPSAltitudeRef=0")
+    else:
+        etArg.append("-GPSAltitudeRef=1")
+    #Since we're modifying our own copy of originl, we don't need the default exiftool _original copy
+    etArg.append("-overwrite_original")
+    print(etArg)
+    #pyexiftool execution requires binary string
+    etArg_b = [str.encode(a) for a in etArg]
+    f_b = str.encode(fn)
+    etArg_b.append(f_b)
+    et.execute(*etArg_b)
+    metadata = get_metadata(fn)
 
 #Input directory containing images
 #image_dir = '.'
 image_dir = sys.argv[1]
 
-#Altitude of home point, meters above WGS84 ellipsoid 
+image_dir_mod = os.path.join(image_dir, 'modified')
+if not os.path.exists(image_dir_mod):
+    os.makedirs(image_dir_mod)
+
+#Should accept as argument
+#out_ref = "HAE"
+out_ref = "MSL"
+
+#Known altitude of home point, meters above WGS84 ellipsoid 
 #This comes from GCP near home point
-#Can also extract automatically from 3rd party service for lat/lon, see commented code below
+#Montlake Triangle
+home_alt_ell = -1.0
 #IMA fields
 #home_alt_ell = -14.2
 #Beach at sea level
 #home_alt_ell = -22.7 
 #Nooksack River Site
 #home_alt_ell = 72 
-home_alt_ell = 1642
+#Baker
+#home_alt_ell = 1642
 
-#Maintain consistence - absolute altitude relative to MSL
-#Approx geoid offset in Seattle (note geoid is above ellipsoid)
-#geoid_height = 22.7
-geoid_height = 0
-#Altitude of home point, meters above EGM96 geoid (mean sea level)
-home_alt_msl = home_alt_ell + geoid_height
+#Approx geoid offset for Benchmark #533 on UW Campus in Seattle, relative to ellipsoid
+#Note: geoid is below ellipsoid at this location
+geoid_height = -23.75
 
-image_dir_mod = os.path.join(image_dir, 'modified')
-if not os.path.exists(image_dir_mod):
-    os.makedirs(image_dir_mod)
+home_alt_msl = None
+if out_ref == "MSL":
+    #If desired, output absolute altitude relative to MSL
+    #Altitude of home point, meters above EGM96 geoid (mean sea level)
+    home_alt_msl = home_alt_ell - geoid_height
 
 #Process both RAW and JPG
-ext_list = ["DNG", "JPG", "jpg"]
+#ext_list = ["DNG", "JPG", "jpg"]
+ext_list = ["JPG", "jpg"]
 for ext in ext_list:
     fn_list_orig = glob.glob(os.path.join(image_dir, '*.%s' % ext))
     if fn_list_orig:
@@ -103,66 +148,17 @@ for ext in ext_list:
                 if not os.path.exists(os.path.join(image_dir_mod, fn)):
                     print(fn)
                     shutil.copy2(fn, image_dir_mod)
-
+        
+        #Get list of files to modify
         fn_list_mod = glob.glob(os.path.join(image_dir_mod, '*.%s' % ext))
 
-        #  Display the value of 'EXIF:GPSAltitude', 'EXIF:GPSAltitudeRef', 'XMP:AbsoluteAltitude','XMP:RelativeAltitude' metadata
-        display_image_altitude(fn_list_orig)
+        #Only need to do this once for first image near home point
+        metadata = get_metadata(fn_list_mod[0])
+        if home_alt_msl is None:
+            home_alt_msl = USGS10mElev(metadata['EXIF:GPSLongitude'], metadata['EXIF:GPSLatitude'])
 
-        #  Updates EXIF:GPSAltitude to be the value of (XMP:RelativeAltitude + homePointAltitude)
-        update_gps_altitude(fn_list_mod, home_alt_msl)
+        #Update EXIF:GPSAltitude to be the value of (XMP:RelativeAltitude + homePointAltitude)
+        for fn in fn_list_mod:
+            update_gps_altitude(fn, home_alt_msl)
 
-        #  Display the value of 'EXIF:GPSAltitude', 'EXIF:GPSAltitudeRef', 'XMP:AbsoluteAltitude','XMP:RelativeAltitude' metadata
-        display_image_altitude(fn_list_mod)
-
-"""
-#Code to automatically extract MSL elevation for a given lat/lon
-#Original code here: https://mavicpilots.com/threads/altitude-information-from-exif-data-photos.32535/
-
-import urllib
-import json
-import exifread
-
-# get degress from GPS EXIF tag
-def degress(tag):
-    d = float(tag.values[0].num) / float(tag.values[0].den)
-    m = float(tag.values[1].num) / float(tag.values[1].den)
-    s = float(tag.values[2].num) / float(tag.values[2].den)
-    return d + (m / 60.0) + (s / 3600.0)
-
-# must provide a file name
-if (len(sys.argv)!=2):
-    raise Exception("No file name provided")
-filename = sys.argv[1]
-
-# read the exif tags
-with open(filename, 'rb') as f:
-    tags = exifread.process_file(f)
-
-# get lat/lon
-lat = degress(tags["GPS GPSLatitude"])
-lon = degress(tags["GPS GPSLongitude"])
-lat = -lat if tags["GPS GPSLatitudeRef"].values[0]!='N' else lat
-lon = -lon if tags["GPS GPSLatitudeRef"].values[0]!='E' else lon
-
-# get ground elevation at this location, if possible
-try:
-    ground_level = float("nan")
-    open_elevation_reply = json.loads(urllib.urlopen("https://api.open-elevation.com/api/v1/lookup?locations=%f,%f" % (lat,lon)).read())
-    ground_level = float(open_elevation_reply["results"][0]["elevation"])
-except:
-    pass
-
-# get the altitude
-alt = tags["GPS GPSAltitude"]
-alt = float(alt.values[0].num) / float(alt.values[0].den)
-below_sea_level = tags["GPS GPSAltitudeRef"].values[0]!=0;
-alt = -alt if below_sea_level else alt
-agl = alt - ground_level
-
-# spit it out
-print("Latitude[deg]     : %f" % lat)
-print("Longitude[deg]    : %f" % lon)
-print("Altitude [m, ASL] : %f" % alt)
-print("Altitude [m, AGL] : %f" % agl)
-"""
+et.terminate()
