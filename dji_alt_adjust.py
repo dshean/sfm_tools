@@ -18,8 +18,10 @@ The RelativeAltitude (using barometer) is a much more precise altitude relative 
 If we have a known absolute altitude for the home point (from GCPs or accurate AbsoluteAltitude), we can then use the RelativeAltitude values to update the AbsoluteAltitude for each image
 This script creates a copy of original images ("modified" subdirectory), and updates the GPSAltitude tags
 
-Requires PyExifTool
+Currently requires PyExifTool:
 pip install ocrd-pyexiftool
+
+which in turn, requires that exiftool is installed and available on your $PATH
 
 Should migrate to exifread instead of exiftool
 """
