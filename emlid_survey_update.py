@@ -2,9 +2,9 @@
 
 """
 Update Emlid Reach Survey points with PPK position output from RTKLIB
-
 David Shean
 dshean@gmail.com
+Edited to fix Pandas datetime/Timestamp tz issues, and a few key changes likely based on Emlid updates
 """
 
 import os
@@ -16,9 +16,9 @@ import pandas as pd
 def get_solution_status(Q):
     Q = np.round(Q)
     out = None
-    if Q == 1.0: 
+    if Q == 1.0:
         out = 'FIX'
-    elif Q == 2.0: 
+    elif Q == 2.0:
         out = 'FLOAT'
     elif Q == 5.0:
         out = 'SINGLE'
@@ -37,7 +37,7 @@ def main():
 
     survey_pts_csv_fn = args.survey_pts_csv_fn
     ppk_pos_fn = args.ppk_pos_fn
-    #survey_pts_csv_fn = 'Lab2hottohandle.csv'
+    #survey_pts_csv_fn = 'Lab 2.csv'
     #ppk_pos_fn = 'raw_201804061828_RINEX-2_11/test_20180412/ppk_ssho_cont/raw_201804061828.pos'
 
     print('Loading: %s' % survey_pts_csv_fn)
@@ -50,8 +50,10 @@ def main():
     print('Processing %i input points' % survey_pts.shape[0])
     for index, pt in survey_pts.iterrows():
         #Extract start/stop times for the point
-        start = pt['collection start'].replace(tzinfo=None)
-        end = pt['collection end'].replace(tzinfo=None)
+        start = pt['Averaging start']
+        end = pt['Averaging end']
+        start = pd.to_datetime(start).tz_localize(None).tz_localize('US/Pacific').tz_convert('UTC').tz_localize(None)
+        end = pd.to_datetime(end).tz_localize(None).tz_localize('US/Pacific').tz_convert('UTC').tz_localize(None)
         #Determine indices in ppk pos file for corresponding datetime
         ppk_pos_idx = (ppk_pos['Date_UTC'] >= start) & (ppk_pos['Date_UTC'] < end)
         #Pull out corresponding ppk positions
@@ -69,13 +71,13 @@ def main():
         pt['height'] = pt_ppk_pos_mean['height(m)']
 
         #Assume antenna height is not included in PPK solution pos output
-        pt['height'] -= pt['antenna height']
+        pt['height'] -= pt['Antenna height']
 
         #Calculate mean solution status
-        #Could add a Q = 1 filter 
+        #Could add a Q = 1 filter
         pt['solution status'] = get_solution_status(pt_ppk_pos_mean['Q'])
 
-        #Compute standard deviation of all positions at this point 
+        #Compute standard deviation of all positions at this point
         #Should really convert to a local coord system, but this estimate works for now
         lat_m = 111000
         lon_m = np.cos(np.radians(pt['latitude']))*lat_m
